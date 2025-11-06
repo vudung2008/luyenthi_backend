@@ -1,0 +1,8 @@
+0=Loi form dang ky
+1=Mat khau khong dam bao
+3=Tai khoan mat khau khong chinh xac
+4=Chua dang nhap
+5=Phien dang nhap het han
+6=Token het han hoac khong hop le
+7=Request qua nhieu
+8=Gia tri khong hop le
