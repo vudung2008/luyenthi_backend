@@ -39,11 +39,20 @@ const privateLimiter = rateLimit({
   },
 });
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://luyenthi-frontend-6wsq.vercel.app"
+];
+
 // Middlewares
 
 app.use(cors({
-  origin: "https://luyenthi-frontend-6wsq.vercel.app", // hoặc thêm localhost khi dev
-  credentials: true, // cho phép cookie, header Authorization,...
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // Cho phép request không có Origin
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
 }));
 app.use(cookieParser());
 app.use(express.json());
@@ -52,12 +61,12 @@ app.use(validateJsonBodyMiddleware);
 
 // Public routes
 
-app.use('/auth', publicLimiter, authRoute);
+app.use('/auth', /* publicLimiter, */ authRoute);
 
 // Private routes
 app.use(authMiddleware);
 
-app.use('/me', privateLimiter, meRoute);
+app.use('/me', /* privateLimiter, */ meRoute);
 
 connectDB()
   .then(() => {
