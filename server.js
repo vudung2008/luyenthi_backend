@@ -41,7 +41,10 @@ const privateLimiter = rateLimit({
 
 // Middlewares
 
-app.use(cors());
+app.use(cors({
+  origin: "https://luyenthi-frontend-6wsq.vercel.app", // hoặc thêm localhost khi dev
+  credentials: true, // cho phép cookie, header Authorization,...
+}));
 app.use(cookieParser());
 app.use(express.json());
 
