@@ -10,17 +10,17 @@ const ACCESS_TOKEN_TTL = '15m';
 
 export const signUp = async (req, res) => {
     try {
-        
+
         const { username, password, email, firstName, lastName, gender, birth } = req.body;
-    
-        if(!username || !password || !email || !firstName || !lastName || !gender || !birth) {
+
+        if (!username || !password || !email || !firstName || !lastName || !gender || !birth) {
             return res.status(400).json({
                 message: 'Thieu gia tri',
                 code: 0
             });
         }
-    
-        if(password.length < 6) {
+
+        if (password.length < 6) {
             return res.status(400).json({
                 message: 'Mat khau phai >= 6 ky tu',
                 code: 1
@@ -34,7 +34,7 @@ export const signUp = async (req, res) => {
             ]
         });
 
-        if(user) {
+        if (user) {
             return res.status(409).json({
                 message: 'tai khoan da duoc dang ky'
             });
@@ -57,7 +57,7 @@ export const signUp = async (req, res) => {
         })
 
     } catch (error) {
-        logger('error',    `Loi tai signUp, error: ${error}`);
+        logger('error', `Loi tai signUp, error: ${error}`);
         return res.status(500).json({
             message: 'Loi he thong'
         });
@@ -67,12 +67,12 @@ export const signUp = async (req, res) => {
 export const signIn = async (req, res) => {
 
     try {
-        
-        const { username, password } = req.body;
-    
-        const user = await User.findOne({username}).select('+password');
 
-        if(!user) {
+        const { username, password } = req.body;
+
+        const user = await User.findOne({ username }).select('+password');
+
+        if (!user) {
             return res.status(401).json({
                 message: 'Tai khoan hoac mat khau khong chinh xac',
                 code: 3
@@ -80,7 +80,7 @@ export const signIn = async (req, res) => {
         }
         const authentication = await bcrypt.compare(password, user.password);
 
-        if(!authentication) {
+        if (!authentication) {
             return res.status(401).json({
                 message: 'Tai khoan hoac mat khau khong chinh xac',
                 code: 3
@@ -95,7 +95,7 @@ export const signIn = async (req, res) => {
             expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL)
         })
 
-        await res.cookie('refreshToken', refreshToken, {httpOnly: true, secure: true});
+        await res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: "none" });
 
         logger('login', `USER: ${username}, IP: ${req.ip}`)
 
@@ -103,7 +103,7 @@ export const signIn = async (req, res) => {
             message: 'Dang nhap thanh cong'
         })
     } catch (error) {
-        logger('error',    `Loi tai signIn, error: ${error}`);
+        logger('error', `Loi tai signIn, error: ${error}`);
         return res.status(500).json({
             message: 'Loi he thong'
         });
@@ -113,17 +113,17 @@ export const signIn = async (req, res) => {
 
 export const signOut = async (req, res) => {
     try {
-        
+
         const refreshToken = req.cookies?.refreshToken;
 
-        if(!refreshToken) {
+        if (!refreshToken) {
             return res.status(400).json({
                 message: 'ban phai dang nhap moi co the su dung',
                 code: 4
             })
         }
 
-        await Session.deleteOne({refreshToken: refreshToken});
+        await Session.deleteOne({ refreshToken: refreshToken });
         res.clearCookie('refreshToken');
         return res.sendStatus(204);
 
@@ -144,16 +144,16 @@ export const getToken = async (req, res) => {
         if (authHeader && typeof authHeader === 'string') {
             const parts = authHeader.split(' ');
             if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
-            accessToken = parts[1];
+                accessToken = parts[1];
             }
         }
 
-        if(accessToken) {
+        if (accessToken) {
             try {
                 const user = await jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
                 const isExist = await User.findById(user.userId).select('_id');
-                if(!isExist) throw new Error("");
-                
+                if (!isExist) throw new Error("");
+
                 return res.sendStatus(204);
             } catch (error) {
             }
@@ -161,8 +161,8 @@ export const getToken = async (req, res) => {
 
         const refreshToken = req.cookies?.refreshToken;
 
-        const session = await Session.findOne({refreshToken});
-        if(!session || session.expiresAt < Date.now()) {
+        const session = await Session.findOne({ refreshToken });
+        if (!session || session.expiresAt < Date.now()) {
             return res.status(401).json({
                 message: 'Phien dang nhap da het han',
                 code: 5
@@ -171,7 +171,7 @@ export const getToken = async (req, res) => {
         accessToken = await jwt.sign({
             userId: session.userId
         }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
-    
+
 
         res.status(201).json({
             message: 'Lay accessToken thanh cong',
