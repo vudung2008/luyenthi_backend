@@ -9,5 +9,5 @@ router.post('/signup', signUp);
 
 router.post('/signout', signOut);
 
-router.get('/gettoken', getToken); 
+router.post('/gettoken', getToken);
 export default router;
