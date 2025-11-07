@@ -34,7 +34,10 @@ export default async (req, res, next) => {
                 }
                 next();
             } catch (error) {
-
+                return res.status(403).json({
+                    message: 'Token da het han hoac khong hop le',
+                    code: 6
+                })
             }
         }
     } catch (error) {

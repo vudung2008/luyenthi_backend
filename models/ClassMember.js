@@ -14,7 +14,7 @@ const classMemberSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['student', 'assistant'],
+        enum: ['student', 'assistant', 'leader'],
         default: 'student',
     },
     joinedAt: {

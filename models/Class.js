@@ -9,19 +9,18 @@ const classSchema = new mongoose.Schema({
         minLength: 1,
         maxLength: 50
     },
-    leader: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
     maxMem: {
-        type: Number
+        type: Number,
+        default: null
     },
     description: {
         type: String,
+        default: null,
         maxLength: 100
     }
 
 }, {
     timestamp: true
 })
+
+export default mongoose.model('Class', classSchema)

@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { connectDB } from "./libs/db.js";
 import authRoute from "./routes/authRoute.js";
 import meRoute from "./routes/meRoute.js";
+import classRoute from './routes/classRoute.js'
 import validateJsonBodyMiddleware from "./middlewares/validateJsonBodyMiddleware.js";
 import authMiddleware from "./middlewares/authMiddleware.js";
 
@@ -67,6 +68,7 @@ app.use('/auth', /* publicLimiter, */ authRoute);
 app.use(authMiddleware);
 
 app.use('/me', /* privateLimiter, */ meRoute);
+app.use('/class', classRoute);
 
 connectDB()
   .then(() => {
