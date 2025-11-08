@@ -85,3 +85,25 @@ export const updatePassword = async (req, res) => {
 
 }
 
+export const getUserInfo = async (req, res) => {
+    try {
+        const { id, role, joinedAt } = req.query;
+
+        if (!id) {
+            return res.status(400).json({
+                message: 'Khong co userId'
+            })
+        }
+
+        let data = await User.findById(id).select('-email');
+        data = { ...data.toObject(), role, joinedAt };
+        return res.status(200).json(data);
+    } catch (error) {
+        logger('error', `Loi tai getUserInfo, error: ${error}`);
+        return res.status(500).json({
+            message: 'Loi he thong'
+        });
+    }
+
+}
+

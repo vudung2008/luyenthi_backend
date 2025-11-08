@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { getMe, updateMe, updatePassword } from '../controllers/meController.js';
+import { getMe, getUserInfo, updateMe, updatePassword } from '../controllers/meController.js';
 
 const router = express.Router();
 
@@ -27,5 +27,7 @@ router.put('/updatepassword', rateLimit({
         code: 7
     },
 }), updatePassword);
+
+router.get('/getUserInfo', getUserInfo);
 
 export default router;
