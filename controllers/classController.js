@@ -140,7 +140,6 @@ export const getClassInfo = async (req, res) => {
                 joinedAt: m.joinedAt
             }))
         }
-        console.log(data);
 
         return res.status(200).json(data);
     } catch (error) {
