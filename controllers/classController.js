@@ -133,7 +133,7 @@ export const getClassInfo = async (req, res) => {
             classId: cls._id,
             maxMem: cls.maxMem,
             description: cls.description,
-            createAt: cls.createAt,
+            createAt: (cls.createdAt.toLocaleDateString()),
             members: members.map(m => ({
                 userId: m.userId,
                 role: m.role,
