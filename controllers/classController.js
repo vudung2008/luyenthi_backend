@@ -123,7 +123,7 @@ export const getClassInfo = async (req, res) => {
 
         const cls = await Class.findById(id);
         if (!cls) {
-            return res.status(403).json({
+            return res.status(404).json({
                 message: 'Class ko ton tai'
             })
         }
