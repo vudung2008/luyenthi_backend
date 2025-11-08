@@ -109,3 +109,46 @@ export const getMyClasses = async (req, res) => {
         });
     }
 }
+
+export const getClassInfo = async (req, res) => {
+    try {
+
+        const { id } = req.query;
+
+        if (!id) {
+            return res.status(400).json({
+                message: 'Khong co classId'
+            })
+        }
+
+        const cls = await Class.findById(id);
+        if (!cls) {
+            return res.status(403).json({
+                message: 'Class ko ton tai'
+            })
+        }
+        const members = await ClassMember.find({ classId: id });
+        const data = {
+            name: cls.name,
+            classId: cls._id,
+            maxMem: cls.maxMem,
+            description: cls.description,
+            createAt: cls.createAt,
+            members: members.map(m => ({
+                userId: m.userId,
+                role: m.role,
+                joinedAt: m.joinedAt
+            }))
+        }
+        console.log(data);
+
+        return res.status(200).json(data);
+    } catch (error) {
+        if (error.name === 'CastError') return res.sendStatus(400);
+        logger('error', `Loi tai getClassInfo, error: ${error}`);
+        return res.status(500).json({
+            message: 'Loi he thong'
+        });
+    }
+
+}
