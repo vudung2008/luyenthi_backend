@@ -8,6 +8,7 @@ import { connectDB } from "./libs/db.js";
 import authRoute from "./routes/authRoute.js";
 import meRoute from "./routes/meRoute.js";
 import classRoute from './routes/classRoute.js'
+import examRoute from './routes/examRoute.js'
 import validateJsonBodyMiddleware from "./middlewares/validateJsonBodyMiddleware.js";
 import authMiddleware from "./middlewares/authMiddleware.js";
 
@@ -69,6 +70,7 @@ app.use(authMiddleware);
 
 app.use('/me', /* privateLimiter, */ meRoute);
 app.use('/class', classRoute);
+app.use('/exam', examRoute)
 
 connectDB()
   .then(() => {
