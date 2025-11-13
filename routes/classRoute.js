@@ -1,5 +1,5 @@
 import express from 'express';
-import { createClass, getClassInfo, getMyClasses, joinClass } from '../controllers/classController.js';
+import { createClass, getClassInfo, getExams, getMyClasses, joinClass } from '../controllers/classController.js';
 
 const router = express.Router();
 
@@ -8,7 +8,5 @@ router.get('/getmyclasses', getMyClasses);
 router.post('/createclass', createClass);
 router.get('/getclassinfo', getClassInfo);
 
-// router.get('/submissions');
-// router.create('createexam')
-
+router.get('/getexams', getExams);
 export default router;

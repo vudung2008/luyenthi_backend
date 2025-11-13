@@ -1,6 +1,7 @@
 import Class from '../models/Class.js';
 import logger from '../libs/logger.js';
 import ClassMember from '../models/ClassMember.js'
+import Exam from '../models/Exam.js'
 
 export const createClass = async (req, res) => {
     try {
@@ -150,4 +151,25 @@ export const getClassInfo = async (req, res) => {
         });
     }
 
+}
+
+export const getExams = async (req, res) => {
+    try {
+        const { id } = req.query;
+        const isUser = await ClassMember.findOne({ userId: req.userId, classId: id });
+        if (!isUser) {
+            return res.status(402).json({
+                message: 'Khong du quyen truy cap'
+            })
+        }
+        const data = await Exam.find({ classId: id });
+
+        return res.status(200).json(data);
+
+    } catch (error) {
+        logger('error', `Loi tai getExams, error: ${error}`);
+        return res.status(500).json({
+            message: 'Loi he thong'
+        });
+    }
 }

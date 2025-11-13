@@ -176,3 +176,27 @@ export const submitExam = async (req, res) => {
     }
 };
 
+export const getExamInfo = async (req, res) => {
+    try {
+        const { id } = req.query;
+        const exam = await Exam.findById(id);
+        if (!exam) {
+            return res.status(409).json({
+                message: 'De thi khong ton tai'
+            })
+        }
+        const user = await ClassMember.findOne({
+            userId: req.userId,
+            classId: exam.classId
+        });
+        if (!user) {
+            return res.status(402).json({
+                message: 'KHong du quyen truy cap'
+            })
+        }
+        return res.status(200).json(exam);
+    } catch (error) {
+        logger('error', 'Loi tai getExamInfo:');
+        return res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
+    }
+}
