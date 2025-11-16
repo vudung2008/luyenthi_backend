@@ -90,4 +90,29 @@ const ExamSchema = new Schema({
     }
 }, { timestamps: true });
 
+ExamSchema.set('toJSON', {
+    virtuals: true,  // giữ các virtual nếu có
+    transform: (doc, ret) => {
+        // convert exam _id
+        ret._id = ret._id.toString();
+
+        // convert _id của các TrueFalseItem subdocuments
+        if (ret.questions && Array.isArray(ret.questions)) {
+            ret.questions = ret.questions.map(q => {
+                // chỉ cần convert _id của TrueFalseItem (multichoice và shortanswer _id = false)
+                if (q.type === 'true-false' && q.truefalse && Array.isArray(q.truefalse.items)) {
+                    q.truefalse.items = q.truefalse.items.map(item => ({
+                        ...item,
+                        _id: item._id.toString()
+                    }));
+                }
+                return q;
+            });
+        }
+
+        return ret;
+    }
+});
+
+
 export default mongoose.model('Exam', ExamSchema);

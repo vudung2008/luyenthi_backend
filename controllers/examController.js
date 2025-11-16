@@ -91,13 +91,14 @@ export const createExam = async (req, res) => {
 
 
 // --- SUBMIT EXAM ---
+
 export const submitExam = async (req, res) => {
     try {
         const { userId, body } = req;
-        const { examId, answers, startedAt } = body;
+        const { examId, answers, startedAt, classId } = body;
 
         if (!examId) return res.status(400).json({ message: 'examId là bắt buộc' });
-        if (!Array.isArray(answers) || answers.length === 0) {
+        if (!Array.isArray(answers)) {
             return res.status(400).json({ message: 'answers phải là mảng và không rỗng' });
         }
 
@@ -107,61 +108,96 @@ export const submitExam = async (req, res) => {
         let totalScore = 0;
         const tfScoreMap = { 0: 0, 1: 0.1, 2: 0.25, 3: 0.5, 4: 1 };
 
-        for (const [i, ans] of answers.entries()) {
+        const processedAnswers = [];
+
+        for (let i = 0; i < answers.length; i++) {
+            const ans = answers[i];
             const question = exam.questions.id(ans.questionId);
+
             if (!question) return res.status(400).json({ message: `Câu hỏi thứ ${i + 1} không tồn tại` });
             if (ans.type !== question.type) return res.status(400).json({ message: `Câu hỏi thứ ${i + 1} type không đúng` });
 
-            // lấy score từ exam.scores theo type
             const scoreType = {
                 'multichoices': exam.score?.multichoices || 1,
                 'true-false': exam.score?.truefalse || 1,
                 'short-answer': exam.score?.shortanswer || 1
             }[ans.type];
 
+            const processed = { questionId: ans.questionId, type: ans.type };
+
+            // --- MULTICHOICE ---
             if (ans.type === 'multichoices') {
                 if (typeof ans.multichoices !== 'number' || ans.multichoices < 0 || ans.multichoices >= question.multichoices.options.length) {
                     return res.status(400).json({ message: `Câu hỏi thứ ${i + 1}: đáp án trắc nghiệm không hợp lệ` });
                 }
+                processed.multichoices = {
+                    selected: ans.multichoices,
+                    correctAnswer: question.multichoices.correctAnswer
+                };
                 if (ans.multichoices === question.multichoices.correctAnswer) {
                     totalScore += scoreType;
                 }
             }
 
+            // --- TRUE/FALSE ---
             if (ans.type === 'true-false') {
                 if (!Array.isArray(ans.truefalse) || ans.truefalse.length !== question.truefalse.items.length) {
                     return res.status(400).json({ message: `Câu hỏi thứ ${i + 1}: số lượng phát biểu không khớp` });
                 }
+
                 let correctCount = 0;
-                for (const itemAns of ans.truefalse) {
+                const tfProcessed = [];
+
+                for (let j = 0; j < ans.truefalse.length; j++) {
+                    const itemAns = ans.truefalse[j];
                     const qItem = question.truefalse.items.id(itemAns.itemId);
                     if (!qItem) return res.status(400).json({ message: `Câu hỏi thứ ${i + 1}: item không tồn tại` });
                     if (typeof itemAns.answer !== 'boolean') {
                         return res.status(400).json({ message: `Câu hỏi thứ ${i + 1}: đáp án true/false không hợp lệ` });
                     }
-                    if (itemAns.answer === qItem.correctAnswer) correctCount++;
+
+                    const isCorrect = itemAns.answer === qItem.correctAnswer;
+                    if (isCorrect) correctCount++;
+
+                    tfProcessed.push({
+                        itemId: itemAns.itemId,
+                        answer: itemAns.answer,
+                        correctAnswer: qItem.correctAnswer
+                    });
                 }
+
+                processed.truefalse = tfProcessed;
+                processed.result = tfProcessed.map(t => t.answer === t.correctAnswer);
                 totalScore += tfScoreMap[Math.min(correctCount, 4)] * scoreType;
             }
 
+            // --- SHORT ANSWER ---
             if (ans.type === 'short-answer') {
                 if (!ans.shortanswer || typeof ans.shortanswer !== 'string') {
                     return res.status(400).json({ message: `Câu hỏi thứ ${i + 1}: đáp án tự luận không hợp lệ` });
                 }
+                processed.shortanswer = {
+                    text: ans.shortanswer,
+                    correctAnswer: question.shortanswer.correctAnswer
+                };
                 if (ans.shortanswer.trim().toLowerCase() === question.shortanswer.correctAnswer.trim().toLowerCase()) {
                     totalScore += scoreType;
                 }
             }
+
+            processedAnswers.push(processed);
         }
 
         const submission = new ExamSubmission({
             examId,
             userId,
-            answers,
+            classId,
+            answers: processedAnswers,
             score: totalScore,
             startedAt: startedAt || new Date(),
             completedAt: new Date()
         });
+
         await submission.save();
 
         return res.status(201).json({
@@ -176,10 +212,11 @@ export const submitExam = async (req, res) => {
     }
 };
 
+
 export const getExamInfo = async (req, res) => {
     try {
         const { id } = req.query;
-        const exam = await Exam.findById(id);
+        const exam = await Exam.findById(id).lean();
         if (!exam) {
             return res.status(409).json({
                 message: 'De thi khong ton tai'
@@ -196,7 +233,46 @@ export const getExamInfo = async (req, res) => {
         }
         return res.status(200).json(exam);
     } catch (error) {
-        logger('error', 'Loi tai getExamInfo:');
+        logger('error', 'Loi tai getExamInfo');
+        return res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
+    }
+}
+
+export const getExamSubmissions = async (req, res) => {
+    try {
+
+        const { examId } = req.query;
+        const exams = await ExamSubmission.find({ userId: req.userId, examId: examId });
+        return res.status(200).json(exams);
+    } catch (error) {
+        logger('error', 'Loi tai getExamSubmissions');
+        return res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
+    }
+}
+
+export const getClassSubmissions = async (req, res) => {
+    try {
+
+        const { classId } = req.query;
+        const exams = await ExamSubmission.find({ userId: req.userId, classId: classId });
+        return res.status(200).json(exams);
+    } catch (error) {
+        logger('error', 'Loi tai getClassSubmissions');
+        return res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
+    }
+}
+
+export const getSubmission = async (req, res) => {
+    try {
+
+        const { id } = req.query;
+        const exams = await ExamSubmission.findById(id);
+        if (exams.userId != req.userId) return res.status(402).json({
+            message: 'Khong du quyen truy cap'
+        })
+        return res.status(200).json(exams);
+    } catch (error) {
+        logger('error', 'Loi tai getSubmission');
         return res.status(500).json({ message: 'Lỗi máy chủ nội bộ' });
     }
 }
